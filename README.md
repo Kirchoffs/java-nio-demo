@@ -1,17 +1,25 @@
 # java-nio-demo
 
-## FileChannel
-• position  
-• size  
-• truncate  
-• force  
-• transferTo  
-• transferFrom
+## Channel
+### FileChannel
+• position()  
+• size()  
+• truncate()  
+• force()  
+• transferTo()  
+• transferFrom()
 
-## ServerSocketChannel
-## SocketChannel
-## DatagramChannel
-• send  
-• receive  
-• read (Should call connect() first)  
-• write (Should call connect() first)
+### ServerSocketChannel
+### SocketChannel
+### DatagramChannel
+• send()  
+• receive()  
+• write() (Should call connect() first)  
+• read() (Should call connect() first)
+
+## Buffer
+• position  
+• limit  
+• capacity  
+When writing to buffer, limit = capacity  
+When reading from buffer,  limit <= capacity  
