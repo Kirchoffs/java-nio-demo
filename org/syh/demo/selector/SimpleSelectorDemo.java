@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 
-public class FirstSelectorDemo {
+public class SimpleSelectorDemo {
     public static void main(String[] args) throws Exception {
         Selector selector = Selector.open();
 

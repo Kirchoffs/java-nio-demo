@@ -58,6 +58,7 @@ public class ClientServerSelectorSecondDemo {
 
                                 if (key.isAcceptable()) {
                                     try {
+                                        System.out.println("Get new connect!");
                                         SocketChannel clientChannel = listenerChannel.accept();
                                         clientChannel.configureBlocking(false);
                                         clientChannel.register(clientSelector, SelectionKey.OP_READ);
@@ -87,6 +88,7 @@ public class ClientServerSelectorSecondDemo {
 
                                 if (key.isReadable()) {
                                     try {
+                                        System.out.println("Get new data input");
                                         SocketChannel clientChannel = (SocketChannel) key.channel();
                                         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
                                         clientChannel.read(byteBuffer);
