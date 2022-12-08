@@ -31,8 +31,7 @@ public class SimpleSelectorDemo {
             } else if (key.isWritable()) {
 
             }
+            selectedKeysIterator.remove();
         }
-
-        selectedKeysIterator.remove();
     }
 }

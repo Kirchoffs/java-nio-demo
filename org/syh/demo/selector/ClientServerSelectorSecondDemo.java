@@ -1,21 +1,21 @@
 package org.syh.demo.selector;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 public class ClientServerSelectorSecondDemo {
     public static void main(String[] args) throws Exception {
-        server();
-        Thread.sleep(2000);
+        CountDownLatch latch = new CountDownLatch(1);
+        server(latch);
+        latch.await();
         new Thread(() -> client()).start();
     }
 
@@ -29,13 +29,14 @@ public class ClientServerSelectorSecondDemo {
 
             buffer.flip();
             socketChannel.write(buffer);
-            socketChannel.close();
+            // socketChannel.close();
+            // There is bug, if we call close method, the server will always have readable events, and read will always return -1.
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static void server() {
+    private static void server(CountDownLatch latch) {
         try {
             Selector serverSelector = Selector.open();
             Selector clientSelector = Selector.open();
@@ -46,10 +47,12 @@ public class ClientServerSelectorSecondDemo {
                     listenerChannel.socket().bind(new InetSocketAddress(8080));
                     listenerChannel.configureBlocking(false);
                     listenerChannel.register(serverSelector, SelectionKey.OP_ACCEPT);
-
+                    
+                    latch.countDown();
                     while (true) {
                         System.out.println("Blocker for server selector");
-                        if (serverSelector.select() > 0) {
+                        if (serverSelector.select(2000) > 0) {
+                            System.out.println("Some channels are ready for connecting");
                             Set<SelectionKey> set = serverSelector.selectedKeys();
                             Iterator<SelectionKey> keyIterator = set.iterator();
 
@@ -58,10 +61,11 @@ public class ClientServerSelectorSecondDemo {
 
                                 if (key.isAcceptable()) {
                                     try {
-                                        System.out.println("Get new connect!");
+                                        System.out.println("Get new connect");
                                         SocketChannel clientChannel = listenerChannel.accept();
                                         clientChannel.configureBlocking(false);
                                         clientChannel.register(clientSelector, SelectionKey.OP_READ);
+                                        System.out.println("Connect done");
                                     } finally {
                                         keyIterator.remove();
                                     }
@@ -70,8 +74,7 @@ public class ClientServerSelectorSecondDemo {
                             }
                         }
                     }
-                } catch (IOException ignored) {
-                }
+                } catch (Exception ignored) {}
             }).start();
 
 
@@ -79,7 +82,9 @@ public class ClientServerSelectorSecondDemo {
                 try {
                     while (true) {
                         System.out.println("Blocker for client selector");
-                        if (clientSelector.select() > 0) {
+                        if (clientSelector.select(2000) > 0) {
+                            System.out.println("Some channels are ready for reading");
+
                             Set<SelectionKey> set = clientSelector.selectedKeys();
                             Iterator<SelectionKey> keyIterator = set.iterator();
 
@@ -91,19 +96,21 @@ public class ClientServerSelectorSecondDemo {
                                         System.out.println("Get new data input");
                                         SocketChannel clientChannel = (SocketChannel) key.channel();
                                         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
-                                        clientChannel.read(byteBuffer);
+                                        int len = clientChannel.read(byteBuffer);
+                                        System.out.println(String.format("There are %d number of bytes of data", len));
                                         byteBuffer.flip();
-                                        System.out.println(Charset.defaultCharset().newDecoder().decode(byteBuffer).toString());
+                                        System.out.println(new String(byteBuffer.array(), 0, len));
+                                        System.out.println("Read done");
+                                    } catch (Exception e) {
+                                        System.out.println("Read error");
                                     } finally {
                                         keyIterator.remove();
                                     }
                                 }
-
                             }
                         }
                     }
-                } catch (IOException ignored) {
-                }
+                } catch (Exception ignored) {}
             }).start();
         } catch (Exception e) {
             e.printStackTrace();
