@@ -29,8 +29,9 @@ public class ClientServerSelectorSecondDemo {
 
             buffer.flip();
             socketChannel.write(buffer);
-            // socketChannel.close();
+            socketChannel.close();
             // There is bug, if we call close method, the server will always have readable events, and read will always return -1.
+            // So we need to handle -1 cases as client closed event.
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -97,6 +98,10 @@ public class ClientServerSelectorSecondDemo {
                                         SocketChannel clientChannel = (SocketChannel) key.channel();
                                         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
                                         int len = clientChannel.read(byteBuffer);
+                                        if (len == -1) {
+                                            key.channel().close();
+                                            break;
+                                        }
                                         System.out.println(String.format("There are %d number of bytes of data", len));
                                         byteBuffer.flip();
                                         System.out.println(new String(byteBuffer.array(), 0, len));
